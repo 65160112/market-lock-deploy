@@ -1,0 +1,104 @@
+=========================
+1) MASTER TABLES
+=========================
+CREATE TABLE app_user (
+  user_id     BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  username    VARCHAR(50)  NOT NULL UNIQUE,
+  password    VARCHAR(255) NOT NULL,
+  firstname   VARCHAR(100) NOT NULL,
+  lastname    VARCHAR(100) NOT NULL,
+  email       VARCHAR(255) NOT NULL UNIQUE,
+  role        VARCHAR(30)  NOT NULL,  -- 'user','manager','admin'
+  phone       VARCHAR(30),
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+  CONSTRAINT ck_user_role
+  CHECK (role IN ('user','manager','admin'))
+);
+CREATE TABLE market_lock (
+  lock_id     BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  lock_name   VARCHAR(50) NOT NULL UNIQUE,
+  zone        VARCHAR(50),
+  description TEXT,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+=========================
+2) CORE TABLES
+=========================
+CREATE TABLE booking (
+  booking_id     BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  user_id        BIGINT NOT NULL,
+  lock_id        BIGINT NOT NULL,
+  booking_date   DATE   NOT NULL,
+
+  status         VARCHAR(30) NOT NULL, 
+  -- 'pending','approved','rejected','cancelled'
+
+  approved_by    BIGINT,
+  approved_at    TIMESTAMPTZ,
+  rejected_reason TEXT,
+
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+  CONSTRAINT fk_booking_user
+    FOREIGN KEY (user_id)
+    REFERENCES app_user(user_id)
+    ON UPDATE CASCADE ON DELETE CASCADE,
+
+  CONSTRAINT fk_booking_lock
+    FOREIGN KEY (lock_id)
+    REFERENCES market_lock(lock_id)
+    ON UPDATE CASCADE ON DELETE RESTRICT,
+
+  CONSTRAINT fk_booking_manager
+    FOREIGN KEY (approved_by)
+    REFERENCES app_user(user_id)
+    ON UPDATE CASCADE ON DELETE SET NULL,
+
+  CONSTRAINT ck_booking_status
+    CHECK (status IN ('pending','approved','rejected','cancelled'))
+);
+	: กันจองซ้ำ (เฉพาะ booking ที่ active)
+
+PostgreSQL รองรับ Partial Unique Index
+
+CREATE UNIQUE INDEX uq_booking_active
+ON booking(lock_id, booking_date)
+WHERE status IN ('pending','approved');
+
+	ถ้ามี pending หรือ approved อยู่
+	คนอื่นจองไม่ได้
+
+	ถ้า rejected หรือ cancelled
+	คนอื่นจองได้ทันที
+
+CREATE TABLE payment (
+  payment_id    BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  booking_id    BIGINT NOT NULL,
+  slip_image    VARCHAR(255) NOT NULL,
+  payment_status VARCHAR(30) NOT NULL DEFAULT 'waiting',
+  uploaded_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+  CONSTRAINT fk_payment_booking
+    FOREIGN KEY (booking_id)
+    REFERENCES booking(booking_id)
+    ON UPDATE CASCADE ON DELETE CASCADE,
+
+  CONSTRAINT ck_payment_status
+    CHECK (payment_status IN ('waiting','verified','rejected'))
+);
+=========================
+3) INDEXES (PERFORMANCE)
+=========================
+-- Booking indexes
+CREATE INDEX idx_booking_user      ON booking(user_id);
+CREATE INDEX idx_booking_lock      ON booking(lock_id);
+CREATE INDEX idx_booking_date      ON booking(booking_date);
+CREATE INDEX idx_booking_status    ON booking(status);
+
+-- Payment indexes
+CREATE INDEX idx_payment_booking   ON payment(booking_id);
+CREATE INDEX idx_payment_status    ON payment(payment_status);
+
+-- User role filter
+CREATE INDEX idx_user_role         ON app_user(role);
