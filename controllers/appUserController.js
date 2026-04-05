@@ -1,5 +1,5 @@
 const AppUser = require("../models/appUserModel");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 
 const appUserController = {
   // POST /users — Admin only: create manager or vendor

@@ -1,6 +1,6 @@
 const appUserController = require('../controllers/appUserController');
 const AppUser = require('../models/appUserModel');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 
 jest.mock('../models/appUserModel');
 jest.mock('bcrypt');
