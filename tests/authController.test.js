@@ -64,7 +64,7 @@ describe('authController', () => {
       expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ message: 'ชื่อผู้ใช้นี้ถูกใช้งานแล้ว' }));
     });
 
-    test('TC-U-005: role ที่ไม่อนุญาต ให้ default เป็น tenant', async () => {
+    test('TC-U-005: register ได้ role vendor เสมอ ไม่ว่าจะส่ง role อะไรมา', async () => {
       req.body = { username: 'john', email: 'john@test.com', password: '123456', full_name: 'John', role: 'admin' };
       AppUser.findByEmail.mockResolvedValue(null);
       AppUser.findByUsername.mockResolvedValue(null);
@@ -73,7 +73,7 @@ describe('authController', () => {
 
       await authController.register(req, res);
 
-      expect(AppUser.create).toHaveBeenCalledWith(expect.objectContaining({ role: 'tenant' }));
+      expect(AppUser.create).toHaveBeenCalledWith(expect.objectContaining({ role: 'vendor' }));
     });
   });
 

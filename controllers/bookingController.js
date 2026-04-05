@@ -97,7 +97,7 @@ const bookingController = {
   async updateBookingStatus(req, res) {
     try {
       const { status } = req.body;
-      const validStatuses = ["approved", "rejected", "cancelled"];
+      const validStatuses = ["confirmed", "approved", "rejected", "cancelled"];
       if (!validStatuses.includes(status)) {
         return res.status(400).json({ message: "สถานะไม่ถูกต้อง" });
       }

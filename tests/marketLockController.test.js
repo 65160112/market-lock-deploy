@@ -32,6 +32,12 @@ describe('marketLockController', () => {
       await marketLockController.getMapLayout(req, res);
       expect(res.json).toHaveBeenCalledWith([{ id: 1, zone: 'A' }]);
     });
+
+    test('error ได้ 500', async () => {
+      MarketLock.getMapLayout.mockRejectedValue(new Error('db error'));
+      await marketLockController.getMapLayout(req, res);
+      expect(res.status).toHaveBeenCalledWith(500);
+    });
   });
 
   describe('getLockById', () => {
@@ -47,6 +53,13 @@ describe('marketLockController', () => {
       MarketLock.findById.mockResolvedValue({ id: 1, zone: 'A' });
       await marketLockController.getLockById(req, res);
       expect(res.json).toHaveBeenCalledWith({ id: 1, zone: 'A' });
+    });
+
+    test('error ได้ 500', async () => {
+      req.params.id = '1';
+      MarketLock.findById.mockRejectedValue(new Error('db error'));
+      await marketLockController.getLockById(req, res);
+      expect(res.status).toHaveBeenCalledWith(500);
     });
   });
 
@@ -64,6 +77,13 @@ describe('marketLockController', () => {
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalledWith({ message: 'สร้างล็อคสำเร็จ', id: 5 });
     });
+
+    test('error ได้ 500', async () => {
+      req.body = { zone: 'A', lock_number: '01', price_per_month: 1500 };
+      MarketLock.create.mockRejectedValue(new Error('db error'));
+      await marketLockController.createLock(req, res);
+      expect(res.status).toHaveBeenCalledWith(500);
+    });
   });
 
   describe('updateLock', () => {
@@ -73,6 +93,14 @@ describe('marketLockController', () => {
       MarketLock.update.mockResolvedValue();
       await marketLockController.updateLock(req, res);
       expect(res.json).toHaveBeenCalledWith({ message: 'อัปเดตล็อคสำเร็จ' });
+    });
+
+    test('error ได้ 500', async () => {
+      req.params.id = '1';
+      req.body = { price_per_month: 2000 };
+      MarketLock.update.mockRejectedValue(new Error('db error'));
+      await marketLockController.updateLock(req, res);
+      expect(res.status).toHaveBeenCalledWith(500);
     });
   });
 

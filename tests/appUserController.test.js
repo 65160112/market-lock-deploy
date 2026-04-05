@@ -14,6 +14,57 @@ describe('appUserController', () => {
     jest.clearAllMocks();
   });
 
+  describe('createUser', () => {
+    test('ข้อมูลไม่ครบ ได้ 400', async () => {
+      req.body = { username: 'john', email: 'j@j.com' };
+      await appUserController.createUser(req, res);
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({ message: 'กรุณากรอกข้อมูลให้ครบถ้วน' });
+    });
+
+    test('role ไม่ถูกต้อง ได้ 400', async () => {
+      req.body = { username: 'john', email: 'j@j.com', password: '123', full_name: 'John', role: 'admin' };
+      await appUserController.createUser(req, res);
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({ message: 'บทบาทไม่ถูกต้อง' });
+    });
+
+    test('email ซ้ำ ได้ 409', async () => {
+      req.body = { username: 'john', email: 'j@j.com', password: '123', full_name: 'John', role: 'vendor' };
+      AppUser.findByEmail.mockResolvedValue({ id: 1 });
+      await appUserController.createUser(req, res);
+      expect(res.status).toHaveBeenCalledWith(409);
+      expect(res.json).toHaveBeenCalledWith({ message: 'อีเมลนี้ถูกใช้งานแล้ว' });
+    });
+
+    test('username ซ้ำ ได้ 409', async () => {
+      req.body = { username: 'john', email: 'j@j.com', password: '123', full_name: 'John', role: 'vendor' };
+      AppUser.findByEmail.mockResolvedValue(null);
+      AppUser.findByUsername.mockResolvedValue({ id: 2 });
+      await appUserController.createUser(req, res);
+      expect(res.status).toHaveBeenCalledWith(409);
+      expect(res.json).toHaveBeenCalledWith({ message: 'ชื่อผู้ใช้นี้ถูกใช้งานแล้ว' });
+    });
+
+    test('สร้าง user สำเร็จ ได้ 201', async () => {
+      req.body = { username: 'john', email: 'j@j.com', password: '123', full_name: 'John', role: 'vendor', phone: '0812345678' };
+      AppUser.findByEmail.mockResolvedValue(null);
+      AppUser.findByUsername.mockResolvedValue(null);
+      bcrypt.hash.mockResolvedValue('hashed123');
+      AppUser.create.mockResolvedValue(5);
+      await appUserController.createUser(req, res);
+      expect(res.status).toHaveBeenCalledWith(201);
+      expect(res.json).toHaveBeenCalledWith({ message: 'สร้างผู้ใช้สำเร็จ', userId: 5 });
+    });
+
+    test('error ได้ 500', async () => {
+      req.body = { username: 'john', email: 'j@j.com', password: '123', full_name: 'John', role: 'vendor' };
+      AppUser.findByEmail.mockRejectedValue(new Error('db error'));
+      await appUserController.createUser(req, res);
+      expect(res.status).toHaveBeenCalledWith(500);
+    });
+  });
+
   describe('getAllUsers', () => {
     test('admin ดูผู้ใช้ทั้งหมดสำเร็จ', async () => {
       AppUser.findAll.mockResolvedValue([{ id: 1 }, { id: 2 }]);
@@ -43,6 +94,13 @@ describe('appUserController', () => {
       const called = res.json.mock.calls[0][0];
       expect(called.password).toBeUndefined();
     });
+
+    test('error ได้ 500', async () => {
+      req.params.id = '1';
+      AppUser.findById.mockRejectedValue(new Error('db error'));
+      await appUserController.getUserById(req, res);
+      expect(res.status).toHaveBeenCalledWith(500);
+    });
   });
 
   describe('updateUser', () => {
@@ -71,6 +129,15 @@ describe('appUserController', () => {
       AppUser.update.mockResolvedValue();
       await appUserController.updateUser(req, res);
       expect(bcrypt.hash).toHaveBeenCalledWith('newpass', 10);
+    });
+
+    test('error ได้ 500', async () => {
+      req.params.id = '1';
+      req.user = { id: 1, role: 'admin' };
+      req.body = { full_name: 'New Name' };
+      AppUser.update.mockRejectedValue(new Error('db error'));
+      await appUserController.updateUser(req, res);
+      expect(res.status).toHaveBeenCalledWith(500);
     });
   });
 

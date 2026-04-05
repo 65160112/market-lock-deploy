@@ -137,6 +137,11 @@ describe('Models', () => {
       await expect(MarketLock.updateStatus(1, 'occupied', 5)).resolves.not.toThrow();
     });
 
+    test('updateStatus โดยไม่ส่ง owner_id — ใช้ค่า default null', async () => {
+      db.query.mockResolvedValue([{}]);
+      await expect(MarketLock.updateStatus(1, 'available')).resolves.not.toThrow();
+    });
+
     test('update — เรียก query สำเร็จ', async () => {
       db.query.mockResolvedValue([{}]);
       await expect(MarketLock.update(1, { price_per_month: 2000 })).resolves.not.toThrow();
@@ -184,6 +189,11 @@ describe('Models', () => {
     test('updateStatus — เรียก query สำเร็จ', async () => {
       db.query.mockResolvedValue([{}]);
       await expect(Payment.updateStatus(1, 'approved', 'โอนแล้ว')).resolves.not.toThrow();
+    });
+
+    test('updateStatus โดยไม่ส่ง admin_note — ใช้ค่า default null', async () => {
+      db.query.mockResolvedValue([{}]);
+      await expect(Payment.updateStatus(1, 'approved')).resolves.not.toThrow();
     });
 
     test('getPendingPayments — คืน array', async () => {
