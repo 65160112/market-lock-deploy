@@ -1,4 +1,13 @@
 require("dotenv").config();
+
+// ป้องกัน process crash จาก unhandled errors
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught Exception:", err.message);
+});
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled Rejection:", reason);
+});
+
 const express = require("express");
 const cors = require("cors");
 const session = require("express-session");
