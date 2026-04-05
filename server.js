@@ -74,6 +74,9 @@ app.use(
   })
 );
 
+// Health check for Railway
+app.get("/health", (req, res) => res.json({ status: "ok" }));
+
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/users", appUserRoutes);
