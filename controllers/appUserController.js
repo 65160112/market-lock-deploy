@@ -2,6 +2,46 @@ const AppUser = require("../models/appUserModel");
 const bcrypt = require("bcrypt");
 
 const appUserController = {
+  // POST /users — Admin only: create manager or vendor
+  async createUser(req, res) {
+    try {
+      const { username, email, password, role, full_name, phone } = req.body;
+
+      if (!username || !email || !password || !full_name || !role) {
+        return res.status(400).json({ message: "กรุณากรอกข้อมูลให้ครบถ้วน" });
+      }
+
+      if (!["manager", "vendor"].includes(role)) {
+        return res.status(400).json({ message: "บทบาทไม่ถูกต้อง" });
+      }
+
+      const existingEmail = await AppUser.findByEmail(email);
+      if (existingEmail) {
+        return res.status(409).json({ message: "อีเมลนี้ถูกใช้งานแล้ว" });
+      }
+
+      const existingUsername = await AppUser.findByUsername(username);
+      if (existingUsername) {
+        return res.status(409).json({ message: "ชื่อผู้ใช้นี้ถูกใช้งานแล้ว" });
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      const userId = await AppUser.create({
+        username,
+        email,
+        password: hashedPassword,
+        role,
+        full_name,
+        phone,
+      });
+
+      res.status(201).json({ message: "สร้างผู้ใช้สำเร็จ", userId });
+    } catch (err) {
+      res.status(500).json({ message: "เกิดข้อผิดพลาด", error: err.message });
+    }
+  },
+
   // GET /users — Admin only
   async getAllUsers(req, res) {
     try {

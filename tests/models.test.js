@@ -34,7 +34,7 @@ describe('Models', () => {
 
     test('create — คืน insertId', async () => {
       db.query.mockResolvedValue([{ insertId: 5 }]);
-      const id = await AppUser.create({ username: 'john', email: 'j@j.com', password: 'h', role: 'tenant', full_name: 'John', phone: '08' });
+      const id = await AppUser.create({ username: 'john', email: 'j@j.com', password: 'h', role: 'vendor', full_name: 'John', phone: '08' });
       expect(id).toBe(5);
     });
 

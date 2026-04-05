@@ -22,7 +22,7 @@ describe('authController', () => {
 
   describe('register', () => {
     test('TC-U-001: สมัครสมาชิกสำเร็จ', async () => {
-      req.body = { username: 'john', email: 'john@test.com', password: '123456', full_name: 'John', phone: '0800000000', role: 'tenant' };
+      req.body = { username: 'john', email: 'john@test.com', password: '123456', full_name: 'John', phone: '0800000000', role: 'vendor' };
       AppUser.findByEmail.mockResolvedValue(null);
       AppUser.findByUsername.mockResolvedValue(null);
       bcrypt.hash.mockResolvedValue('hashed');
@@ -82,7 +82,7 @@ describe('authController', () => {
   describe('login', () => {
     test('TC-U-006: login สำเร็จ', async () => {
       req.body = { email: 'john@test.com', password: '123456' };
-      const mockUser = { id: 1, email: 'john@test.com', password: 'hashed', role: 'tenant', username: 'john', full_name: 'John' };
+      const mockUser = { id: 1, email: 'john@test.com', password: 'hashed', role: 'vendor', username: 'john', full_name: 'John' };
       AppUser.findByEmail.mockResolvedValue(mockUser);
       bcrypt.compare.mockResolvedValue(true);
 
@@ -145,7 +145,7 @@ describe('authController', () => {
 
   describe('me', () => {
     test('TC-U-012: ดูข้อมูลตัวเองสำเร็จ', async () => {
-      req.session.user = { id: 1, username: 'john', role: 'tenant' };
+      req.session.user = { id: 1, username: 'john', role: 'vendor' };
 
       await authController.me(req, res);
 

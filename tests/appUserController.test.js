@@ -48,7 +48,7 @@ describe('appUserController', () => {
   describe('updateUser', () => {
     test('ไม่ใช่เจ้าของและไม่ใช่ admin ได้ 403', async () => {
       req.params.id = '5';
-      req.user = { id: 2, role: 'tenant' };
+      req.user = { id: 2, role: 'vendor' };
       req.body = { full_name: 'New Name' };
       await appUserController.updateUser(req, res);
       expect(res.status).toHaveBeenCalledWith(403);
@@ -56,7 +56,7 @@ describe('appUserController', () => {
 
     test('เจ้าของอัปเดตตัวเองได้', async () => {
       req.params.id = '2';
-      req.user = { id: 2, role: 'tenant' };
+      req.user = { id: 2, role: 'vendor' };
       req.body = { full_name: 'New Name' };
       AppUser.update.mockResolvedValue();
       await appUserController.updateUser(req, res);
@@ -65,7 +65,7 @@ describe('appUserController', () => {
 
     test('อัปเดตพร้อม password ให้ hash ก่อน', async () => {
       req.params.id = '2';
-      req.user = { id: 2, role: 'tenant' };
+      req.user = { id: 2, role: 'vendor' };
       req.body = { password: 'newpass' };
       bcrypt.hash.mockResolvedValue('newhashed');
       AppUser.update.mockResolvedValue();

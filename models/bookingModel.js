@@ -5,10 +5,12 @@ const Booking = {
     const [rows] = await db.query(`
       SELECT b.*, 
              u.full_name AS user_name, u.email AS user_email,
-             ml.zone, ml.lock_number
+             ml.zone, ml.lock_number,
+             p.admin_note AS manager_note
       FROM bookings b
       JOIN app_users u ON b.user_id = u.id
       JOIN market_locks ml ON b.lock_id = ml.id
+      LEFT JOIN payments p ON b.id = p.booking_id
       ORDER BY b.created_at DESC
     `);
     return rows;
@@ -16,10 +18,11 @@ const Booking = {
 
   async findById(id) {
     const [rows] = await db.query(
-      `SELECT b.*, u.full_name AS user_name, ml.zone, ml.lock_number
+      `SELECT b.*, u.full_name AS user_name, ml.zone, ml.lock_number, p.admin_note AS manager_note
        FROM bookings b
        JOIN app_users u ON b.user_id = u.id
        JOIN market_locks ml ON b.lock_id = ml.id
+       LEFT JOIN payments p ON b.id = p.booking_id
        WHERE b.id = ?`,
       [id]
     );
@@ -28,9 +31,10 @@ const Booking = {
 
   async findByUser(user_id) {
     const [rows] = await db.query(
-      `SELECT b.*, ml.zone, ml.lock_number, ml.price_per_month
+      `SELECT b.*, ml.zone, ml.lock_number, ml.price_per_month, p.admin_note AS manager_note
        FROM bookings b
        JOIN market_locks ml ON b.lock_id = ml.id
+       LEFT JOIN payments p ON b.id = p.booking_id
        WHERE b.user_id = ?
        ORDER BY b.created_at DESC`,
       [user_id]

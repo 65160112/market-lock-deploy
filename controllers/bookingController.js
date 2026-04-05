@@ -5,7 +5,7 @@ const bookingController = {
   // GET /bookings — Admin: ดูทั้งหมด / User: ดูของตัวเอง
   async getAllBookings(req, res) {
     try {
-      if (req.user.role === "admin") {
+      if (req.user.role === "admin" || req.user.role === "manager") {
         const bookings = await Booking.findAll();
         return res.json(bookings);
       }
@@ -93,11 +93,11 @@ const bookingController = {
     }
   },
 
-  // PATCH /bookings/:id/status — Admin only
+  // PATCH /bookings/:id/status — Admin/Manager only
   async updateBookingStatus(req, res) {
     try {
       const { status } = req.body;
-      const validStatuses = ["pending", "confirmed", "cancelled"];
+      const validStatuses = ["approved", "rejected", "cancelled"];
       if (!validStatuses.includes(status)) {
         return res.status(400).json({ message: "สถานะไม่ถูกต้อง" });
       }
@@ -105,7 +105,7 @@ const bookingController = {
       const booking = await Booking.findById(req.params.id);
       if (!booking) return res.status(404).json({ message: "ไม่พบการจอง" });
 
-      await Booking.updateStatus(req.params.id, status);
+      await Booking.updateStatus(req.params.id, status, req.user.id);
 
       // อัปเดตสถานะล็อค
       if (status === "confirmed") {

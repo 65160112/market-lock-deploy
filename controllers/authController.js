@@ -5,7 +5,7 @@ const authController = {
   // POST /auth/register
   async register(req, res) {
     try {
-      const { username, email, password, full_name, phone, role } = req.body;
+      const { username, email, password, full_name, phone } = req.body;
 
       if (!username || !email || !password || !full_name) {
         return res.status(400).json({ message: "กรุณากรอกข้อมูลให้ครบถ้วน" });
@@ -22,8 +22,7 @@ const authController = {
       }
 
       const hashedPassword = await bcrypt.hash(password, 10);
-      const allowedRoles = ["tenant", "vendor"];
-      const userRole = allowedRoles.includes(role) ? role : "tenant";
+      const userRole = "vendor"; // Vendors can register themselves
 
       const userId = await AppUser.create({
         username,

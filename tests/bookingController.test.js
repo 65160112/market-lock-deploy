@@ -9,7 +9,7 @@ describe('bookingController', () => {
   let req, res;
 
   beforeEach(() => {
-    req = { body: {}, params: {}, user: { id: 1, role: 'tenant' } };
+    req = { body: {}, params: {}, user: { id: 1, role: 'vendor' } };
     res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
     jest.clearAllMocks();
   });
@@ -23,7 +23,7 @@ describe('bookingController', () => {
     });
 
     test('user ดูได้เฉพาะของตัวเอง', async () => {
-      req.user.role = 'tenant';
+      req.user.role = 'vendor';
       Booking.findByUser.mockResolvedValue([{ id: 1 }]);
       await bookingController.getAllBookings(req, res);
       expect(Booking.findByUser).toHaveBeenCalledWith(1);
@@ -56,7 +56,7 @@ describe('bookingController', () => {
 
     test('ไม่ใช่เจ้าของและไม่ใช่ admin ได้ 403', async () => {
       req.params.id = '1';
-      req.user = { id: 2, role: 'tenant' };
+      req.user = { id: 2, role: 'vendor' };
       Booking.findById.mockResolvedValue({ id: 1, user_id: 5 });
       await bookingController.getBookingById(req, res);
       expect(res.status).toHaveBeenCalledWith(403);
@@ -64,7 +64,7 @@ describe('bookingController', () => {
 
     test('เจ้าของดูได้', async () => {
       req.params.id = '1';
-      req.user = { id: 5, role: 'tenant' };
+      req.user = { id: 5, role: 'vendor' };
       Booking.findById.mockResolvedValue({ id: 1, user_id: 5 });
       await bookingController.getBookingById(req, res);
       expect(res.json).toHaveBeenCalled();
@@ -149,7 +149,7 @@ describe('bookingController', () => {
 
     test('ไม่ใช่เจ้าของ ได้ 403', async () => {
       req.params.id = '1';
-      req.user = { id: 2, role: 'tenant' };
+      req.user = { id: 2, role: 'vendor' };
       Booking.findById.mockResolvedValue({ id: 1, user_id: 5, lock_id: 1 });
       await bookingController.cancelBooking(req, res);
       expect(res.status).toHaveBeenCalledWith(403);
@@ -157,7 +157,7 @@ describe('bookingController', () => {
 
     test('ยกเลิกสำเร็จ', async () => {
       req.params.id = '1';
-      req.user = { id: 5, role: 'tenant' };
+      req.user = { id: 5, role: 'vendor' };
       Booking.findById.mockResolvedValue({ id: 1, user_id: 5, lock_id: 2 });
       Booking.updateStatus.mockResolvedValue();
       MarketLock.updateStatus.mockResolvedValue();

@@ -13,6 +13,7 @@ export default function BookingPage() {
   const [payment, setPayment] = useState({ bank_name: '', transferred_at: '', slip: null });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [dateErrors, setDateErrors] = useState({ start_date: '', end_date: '' });
 
   useEffect(() => {
     api.get(`/locks/${lockId}`).then(res => setLock(res.data)).catch(() => navigate('/map'));
@@ -27,11 +28,58 @@ export default function BookingPage() {
     }
   }, [form.start_date, form.end_date, lock]);
 
-  const handleForm = e => setForm({ ...form, [e.target.name]: e.target.value });
-  const handlePay  = e => setPayment({ ...payment, [e.target.name]: e.target.value });
+  const handleForm = e => {
+    const { name, value } = e.target;
+    setForm({ ...form, [name]: value });
+    
+    // Validate dates
+    if (name === 'start_date' || name === 'end_date') {
+      validateDates(name, value);
+    }
+  };
+
+  const handlePaymentChange = e => {
+    const { name, value } = e.target;
+    setPayment({ ...payment, [name]: value });
+  };
+
+  const validateDates = (fieldName, value) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const startDate = fieldName === 'start_date' ? new Date(value) : new Date(form.start_date);
+    const endDate = fieldName === 'end_date' ? new Date(value) : new Date(form.end_date);
+    
+    let errors = { ...dateErrors };
+    
+    if (fieldName === 'start_date' || form.start_date) {
+      if (startDate < today) {
+        errors.start_date = 'วันที่เริ่มเช่าไม่สามารถเป็นวันในอดีตได้';
+      } else {
+        errors.start_date = '';
+      }
+    }
+    
+    if ((fieldName === 'end_date' || form.end_date) && form.start_date) {
+      if (endDate <= startDate) {
+        errors.end_date = 'วันที่สิ้นสุดต้องมากกว่าวันที่เริ่มเช่า';
+      } else {
+        errors.end_date = '';
+      }
+    }
+    
+    setDateErrors(errors);
+  };
 
   const submitBooking = async e => {
     e.preventDefault();
+    
+    // Check for date errors
+    if (dateErrors.start_date || dateErrors.end_date) {
+      setError('กรุณาแก้ไขข้อมูลวันที่ให้ถูกต้อง');
+      return;
+    }
+    
     setError(''); setLoading(true);
     try {
       const res = await api.post('/bookings', { lock_id: lockId, ...form });
@@ -97,11 +145,27 @@ export default function BookingPage() {
               <div className="field-row">
                 <div className="field">
                   <label>วันที่เริ่มเช่า</label>
-                  <input type="date" name="start_date" value={form.start_date} onChange={handleForm} required />
+                  <input 
+                    type="date" 
+                    name="start_date" 
+                    value={form.start_date} 
+                    onChange={handleForm} 
+                    min={new Date().toISOString().split('T')[0]}
+                    required 
+                  />
+                  {dateErrors.start_date && <div className="field-error">{dateErrors.start_date}</div>}
                 </div>
                 <div className="field">
                   <label>วันที่สิ้นสุด</label>
-                  <input type="date" name="end_date" value={form.end_date} onChange={handleForm} required />
+                  <input 
+                    type="date" 
+                    name="end_date" 
+                    value={form.end_date} 
+                    onChange={handleForm} 
+                    min={form.start_date || new Date().toISOString().split('T')[0]}
+                    required 
+                  />
+                  {dateErrors.end_date && <div className="field-error">{dateErrors.end_date}</div>}
                 </div>
               </div>
               <div className="field">
@@ -133,11 +197,11 @@ export default function BookingPage() {
             <form onSubmit={submitPayment}>
               <div className="field">
                 <label>โอนจากธนาคาร</label>
-                <input name="bank_name" value={payment.bank_name} onChange={handlePay} placeholder="เช่น กสิกรไทย, กรุงเทพ..." required />
+                <input name="bank_name" value={payment.bank_name} onChange={handlePaymentChange} placeholder="เช่น กสิกรไทย, กรุงเทพ..." required />
               </div>
               <div className="field">
                 <label>วันและเวลาที่โอน</label>
-                <input type="datetime-local" name="transferred_at" value={payment.transferred_at} onChange={handlePay} required />
+                <input type="datetime-local" name="transferred_at" value={payment.transferred_at} onChange={handlePaymentChange} required />
               </div>
               <div className="field">
                 <label>แนบสลิปการโอน</label>
@@ -173,111 +237,55 @@ export default function BookingPage() {
       </div>
 
       <style>{`
-        .booking-wrap { max-width:800px; margin:0 auto; }
-        .steps {
-          display:flex; align-items:center; justify-content:center;
-          gap:0; margin-bottom:40px;
-        }
-        .step {
-          display:flex; flex-direction:column; align-items:center; gap:6px;
-          flex:1; position:relative;
-        }
-        .step:not(:last-child)::after {
-          content:''; position:absolute; top:18px; left:60%; width:80%;
-          height:2px; background:var(--border); z-index:0;
-        }
-        .step.done:not(:last-child)::after { background:var(--accent); }
-        .step-num {
-          width:36px; height:36px; border-radius:50%; border:2px solid var(--border);
-          display:flex; align-items:center; justify-content:center;
-          font-weight:700; font-size:14px; background:var(--bg2);
-          color:var(--muted); z-index:1; transition:all .3s;
-        }
-        .step.active .step-num { border-color:var(--accent); color:var(--accent); background:var(--bg3); }
-        .step.done .step-num   { border-color:var(--success); color:#000; background:var(--success); }
-        .step-label { font-size:12px; color:var(--muted); text-align:center; }
-        .step.active .step-label { color:var(--accent); font-weight:600; }
-
-        .booking-body { display:grid; grid-template-columns:280px 1fr; gap:24px; align-items:start; }
-        .lock-info-card {
-          background:var(--bg2); border:1px solid var(--border);
-          border-radius:16px; padding:24px; position:sticky; top:80px;
-        }
-        .lock-badge {
-          font-family:'Prompt',sans-serif; font-size:22px; font-weight:700;
-          color:var(--accent); margin-bottom:16px;
-        }
-        .lock-detail-row { display:flex; justify-content:space-between; font-size:14px; margin-bottom:8px; }
-        .lock-detail-row span { color:var(--muted); }
-        .price-text { color:var(--accent); font-size:16px; }
-        .lock-desc { color:var(--muted); font-size:13px; margin-top:8px; }
-        .total-box {
-          display:flex; justify-content:space-between; align-items:center;
-          margin-top:20px; padding:16px; background:var(--bg3);
-          border-radius:10px; border:1px solid var(--accent)44;
-        }
-        .total-box span { color:var(--muted); font-size:13px; }
-        .total-box strong { color:var(--accent); font-size:22px; font-family:'Prompt',sans-serif; }
-
-        .form-card {
-          background:var(--bg2); border:1px solid var(--border);
-          border-radius:16px; padding:28px;
-        }
-        .form-card h3 { font-size:18px; margin-bottom:24px; }
-        .alert-error {
-          background:#ef444418; border:1px solid #ef444440; color:#fca5a5;
-          padding:12px 16px; border-radius:8px; margin-bottom:16px; font-size:14px;
-        }
-        .field-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-        .field { margin-bottom:16px; }
-        .field label { display:block; margin-bottom:6px; font-size:14px; color:var(--muted); font-weight:500; }
-        .field input, .field textarea {
-          width:100%; padding:12px 14px; background:var(--bg3);
-          border:1px solid var(--border); border-radius:10px; color:var(--text);
-          font-size:15px; transition:border-color .2s; resize:vertical;
-        }
-        .field input:focus, .field textarea:focus { border-color:var(--accent); }
-
-        .bank-info {
-          background:var(--bg3); border:1px solid var(--border);
-          border-radius:12px; padding:16px; margin-bottom:20px;
-        }
-        .bank-title { font-weight:600; margin-bottom:12px; color:var(--accent); font-size:14px; }
-        .bank-row { display:flex; justify-content:space-between; font-size:14px; margin-bottom:6px; }
-        .bank-row span { color:var(--muted); }
-
-        .upload-area {
-          padding:24px; background:var(--bg3); border:2px dashed var(--border);
-          border-radius:10px; text-align:center; cursor:pointer; transition:all .2s;
-          color:var(--muted); font-size:14px;
-        }
-        .upload-area:hover { border-color:var(--accent); color:var(--text); }
-        .upload-icon { font-size:28px; margin-bottom:6px; }
-        .upload-hint { font-size:12px; color:var(--muted); margin-top:4px; }
-
-        .form-actions { display:flex; gap:10px; margin-top:8px; }
-        .btn-ghost {
-          padding:12px 20px; border-radius:10px; border:1px solid var(--border);
-          background:transparent; color:var(--muted); font-size:15px; transition:all .2s;
-        }
-        .btn-ghost:hover { border-color:var(--text); color:var(--text); }
-        .btn-primary {
-          flex:1; padding:12px; border-radius:10px; border:none;
-          background:var(--accent); color:#000; font-size:15px; font-weight:700; transition:all .2s;
-        }
-        .btn-primary:hover:not(:disabled) { background:var(--accent2); }
-        .btn-primary:disabled { opacity:.5; cursor:not-allowed; }
-
-        .success-card { text-align:center; padding:48px; }
-        .success-icon { font-size:64px; margin-bottom:16px; }
-        .success-card h3 { font-size:24px; margin-bottom:12px; color:var(--success); }
-        .success-card p { color:var(--muted); margin-bottom:28px; line-height:1.6; }
-
-        .loading-center { text-align:center; padding:60px; color:var(--muted); }
-        @media(max-width:700px) {
-          .booking-body { grid-template-columns:1fr; }
-          .lock-info-card { position:static; }
-        }
+        .booking-wrap { max-width: 900px; margin: 0 auto; min-height: 100vh; padding: 32px 16px; background: #f8f9fa; color: #1a1a1a; }
+        .steps { display: flex; align-items: center; justify-content: center; gap: 0; margin-bottom: 40px; }
+        .step { display: flex; flex-direction: column; align-items: center; gap: 8px; flex: 1; position: relative; }
+        .step:not(:last-child)::after { content: ''; position: absolute; top: 24px; left: 60%; width: 80%; height: 3px; background: #e5e7eb; z-index: 0; }
+        .step.done:not(:last-child)::after { background: #10b981; }
+        .step-num { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; background: #f0f0f0; color: #999999; z-index: 1; transition: all .3s; border: 2px solid #e5e7eb; }
+        .step.active .step-num { background: #10b981; color: white; border-color: #10b981; box-shadow: 0 4px 12px rgba(16,185,129,0.3); }
+        .step.done .step-num { background: #10b981; color: white; border-color: #10b981; }
+        .step-label { font-size: 14px; color: #666666; text-align: center; font-family: 'Sarabun', sans-serif; font-weight: 500; }
+        .step.active .step-label, .step.done .step-label { color: #10b981; font-weight: 700; }
+        .booking-body { display: grid; grid-template-columns: 300px 1fr; gap: 24px; align-items: start; }
+        .lock-info-card { background: white; border: 2px solid #10b981; border-radius: 16px; padding: 24px; position: sticky; top: 80px; box-shadow: 0 2px 8px rgba(16,185,129,0.1); }
+        .lock-badge { font-family: var(--font-sans); font-size: 22px; font-weight: 700; color: #10b981; margin-bottom: 16px; }
+        .lock-detail-row { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 12px; color: #1a1a1a; }
+        .lock-detail-row span { color: #999999; font-weight: 500; }
+        .price-text { color: #10b981; font-size: 16px; font-weight: 700; }
+        .lock-desc { color: #666666; font-size: 14px; margin-top: 12px; line-height: 1.5; }
+        .total-box { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding: 16px; background: #f0fdf4; border: 2px solid #10b981; border-radius: 12px; }
+        .total-box span { color: #666666; font-size: 14px; font-weight: 500; }
+        .total-box strong { color: #10b981; font-size: 20px; font-family: var(--font-sans); }
+        .form-card { background: white; border: 2px solid #e5e7eb; border-radius: 16px; padding: 28px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .form-card h3 { font-size: 20px; margin-bottom: 24px; color: #10b981; font-family: var(--font-sans); font-weight: 700; }
+        .alert-error { background: #fee2e2; border: 2px solid #ef4444; color: #991b1b; padding: 14px 16px; border-radius: 10px; margin-bottom: 16px; font-size: 14px; font-family: 'Sarabun',sans-serif; font-weight: 500; }
+        .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .field { margin-bottom: 16px; }
+        .field label { display: block; margin-bottom: 8px; font-size: 14px; color: #1a1a1a; font-weight: 600; font-family: 'Sarabun', sans-serif; }
+        .field input, .field textarea { width: 100%; padding: 12px 14px; background: white; border: 2px solid #e5e7eb; border-radius: 10px; color: #1a1a1a; font-size: 15px; transition: all .3s; resize: vertical; font-family: 'Sarabun', sans-serif; }
+        .field input:focus, .field textarea:focus { border-color: #10b981; outline: none; box-shadow: 0 0 0 3px rgba(16,185,129,0.1); }
+        .field-error { color: #ef4444; font-size: 12px; margin-top: 4px; font-family: 'Sarabun', sans-serif; font-weight: 600; }
+        .bank-info { background: #f0fdf4; border: 2px solid #10b981; border-radius: 12px; padding: 16px; margin-bottom: 20px; }
+        .bank-title { font-weight: 700; margin-bottom: 12px; color: #10b981; font-size: 15px; font-family: var(--font-sans); }
+        .bank-row { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px; color: #1a1a1a; }
+        .bank-row span { color: #999999; font-weight: 500; }
+        .upload-area { padding: 24px; background: #f9fafb; border: 2px dashed #10b981; border-radius: 12px; text-align: center; cursor: pointer; transition: all .3s; color: #666666; font-size: 14px; font-family: 'Sarabun', sans-serif; }
+        .upload-area:hover { border-color: #059669; background: #f0fdf4; color: #10b981; }
+        .upload-icon { font-size: 32px; margin-bottom: 8px; }
+        .upload-hint { font-size: 12px; color: #999999; margin-top: 4px; font-weight: 500; }
+        .form-actions { display: flex; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
+        .btn-ghost { padding: 12px 20px; border-radius: 10px; border: 2px solid #e5e7eb; background: white; color: #666666; font-size: 15px; font-weight: 600; transition: all .3s; font-family: 'Sarabun', sans-serif; cursor: pointer; }
+        .btn-ghost:hover { border-color: #10b981; color: #10b981; background: #f0fdf4; }
+        .btn-primary { flex: 1; padding: 12px 16px; border-radius: 10px; border: none; background: #10b981; color: white; font-size: 15px; font-weight: 700; transition: all .3s; cursor: pointer; font-family: 'Sarabun', sans-serif; }
+        .btn-primary:hover:not(:disabled) { background: #059669; box-shadow: 0 4px 12px rgba(16,185,129,0.4); }
+        .btn-primary:disabled { opacity: .6; cursor: not-allowed; }
+        .success-card { text-align: center; padding: 48px; background: #f0fdf4; border: 2px solid #10b981; border-radius: 16px; }
+        .success-icon { font-size: 64px; margin-bottom: 16px; }
+        .success-card h3 { font-size: 24px; margin-bottom: 12px; color: #10b981; font-weight: 700; }
+        .success-card p { color: #666666; margin-bottom: 28px; line-height: 1.6; font-size: 15px; }
+        .loading-center { text-align: center; padding: 60px; color: #999999; }
+        @media(max-width:700px) { .booking-body { grid-template-columns: 1fr; } .lock-info-card { position: static; } }
       `}</style>
     </div>
   );

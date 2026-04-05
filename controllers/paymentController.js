@@ -3,11 +3,17 @@ const Booking = require("../models/bookingModel");
 const MarketLock = require("../models/marketLockModel");
 const multer = require("multer");
 const path = require("path");
+const fs = require("fs");
 
 // ตั้งค่า multer สำหรับอัปโหลดสลิป
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "uploads/slips/");
+    const dir = "uploads/slips/";
+    // สร้างโฟลเดอร์ถ้ายังไม่มี
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    cb(null, dir);
   },
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);
@@ -30,10 +36,10 @@ const upload = multer({
 const paymentController = {
   uploadSlip: upload.single("slip"),
 
-  // GET /payments — Admin: ทั้งหมด, User: ของตัวเอง
+  // GET /payments — Admin/Manager: ทั้งหมด, Vendor: ของตัวเอง
   async getAllPayments(req, res) {
     try {
-      if (req.user.role === "admin") {
+      if (req.user.role === "admin" || req.user.role === "manager") {
         const payments = await Payment.findAll();
         return res.json(payments);
       }
@@ -117,7 +123,7 @@ const paymentController = {
     }
   },
 
-  // PATCH /payments/:id/verify — Admin only
+  // PATCH /payments/:id/verify — Admin/Manager only
   async verifyPayment(req, res) {
     try {
       const { status, admin_note } = req.body; // 'approved' | 'rejected'
@@ -128,7 +134,7 @@ const paymentController = {
       const payment = await Payment.findById(req.params.id);
       if (!payment) return res.status(404).json({ message: "ไม่พบการชำระเงิน" });
 
-      await Payment.updateStatus(req.params.id, status, admin_note);
+      await Payment.updateStatus(req.params.id, status, admin_note, req.user.id);
 
       if (status === "approved") {
         await Booking.updateStatus(payment.booking_id, "confirmed");

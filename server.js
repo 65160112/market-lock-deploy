@@ -4,6 +4,7 @@ const cors = require("cors");
 const session = require("express-session");
 const MySQLStore = require("express-mysql-session")(session);
 const path = require("path");
+const fs = require("fs");
 
 const authRoutes = require("./routes/authRoutes");
 const appUserRoutes = require("./routes/appUserRoutes");
@@ -30,6 +31,14 @@ const sessionStore = new MySQLStore({
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// สร้างโฟลเดอร์ uploads/slips ถ้ายังไม่มี
+const uploadDir = path.join(__dirname, "uploads", "slips");
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+  console.log("Created uploads/slips directory");
+}
+
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.use(

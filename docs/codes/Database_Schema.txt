@@ -8,12 +8,12 @@ CREATE TABLE app_user (
   firstname   VARCHAR(100) NOT NULL,
   lastname    VARCHAR(100) NOT NULL,
   email       VARCHAR(255) NOT NULL UNIQUE,
-  role        VARCHAR(30)  NOT NULL,  -- 'user','manager','admin'
+  role        VARCHAR(30)  NOT NULL,  -- 'admin','manager','vendor'
   phone       VARCHAR(30),
   created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
   CONSTRAINT ck_user_role
-  CHECK (role IN ('user','manager','admin'))
+  CHECK (role IN ('admin','manager','vendor'))
 );
 CREATE TABLE market_lock (
   lock_id     BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -102,3 +102,22 @@ CREATE INDEX idx_payment_status    ON payment(payment_status);
 
 -- User role filter
 CREATE INDEX idx_user_role         ON app_user(role);
+=========================
+4) SEED DATA
+=========================
+-- Admin user (password: admin123)
+INSERT INTO app_user (username, password, firstname, lastname, email, role, phone)
+VALUES ('admin', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'System', 'Administrator', 'admin@marketlock.com', 'admin', '0812345678');
+
+-- Manager user (password: manager123)
+INSERT INTO app_user (username, password, firstname, lastname, email, role, phone)
+VALUES ('manager', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Market', 'Manager', 'manager@marketlock.com', 'manager', '0823456789');
+
+-- Sample market locks
+INSERT INTO market_lock (lock_name, zone, description)
+VALUES
+  ('Lock A1', 'Zone A', 'ตลาดหลักลำลูกกา'),
+  ('Lock A2', 'Zone A', 'ตลาดหลักลำลูกกา'),
+  ('Lock B1', 'Zone B', 'ตลาดนัดสวนจตุจักร'),
+  ('Lock B2', 'Zone B', 'ตลาดนัดสวนจตุจักร'),
+  ('Lock C1', 'Zone C', 'ตลาดนัดบางแค');

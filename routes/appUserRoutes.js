@@ -4,6 +4,7 @@ const appUserController = require("../controllers/appUserController");
 const authMiddleware = require("../middlewares/authMiddleware");
 const roleMiddleware = require("../middlewares/roleMiddleware");
 
+router.post("/", authMiddleware, roleMiddleware("admin"), appUserController.createUser);
 router.get("/", authMiddleware, roleMiddleware("admin"), appUserController.getAllUsers);
 router.get("/:id", authMiddleware, appUserController.getUserById);
 router.put("/:id", authMiddleware, appUserController.updateUser);

@@ -16,12 +16,12 @@ describe('middlewares', () => {
 
   describe('authMiddleware', () => {
     test('TC-U-013: มี session user ให้ผ่าน', () => {
-      req.session.user = { id: 1, role: 'tenant' };
+      req.session.user = { id: 1, role: 'vendor' };
 
       authMiddleware(req, res, next);
 
       expect(next).toHaveBeenCalled();
-      expect(req.user).toEqual({ id: 1, role: 'tenant' });
+      expect(req.user).toEqual({ id: 1, role: 'vendor' });
     });
 
     test('TC-U-014: ไม่มี session ให้ 401', () => {
@@ -47,7 +47,7 @@ describe('middlewares', () => {
     });
 
     test('TC-U-016: role ไม่ตรง ให้ 403', () => {
-      req.user = { id: 1, role: 'tenant' };
+      req.user = { id: 1, role: 'vendor' };
       const middleware = roleMiddleware('admin');
 
       middleware(req, res, next);
@@ -58,7 +58,7 @@ describe('middlewares', () => {
 
     test('TC-U-017: รองรับหลาย role', () => {
       req.user = { id: 1, role: 'vendor' };
-      const middleware = roleMiddleware('tenant', 'vendor');
+      const middleware = roleMiddleware('vendor');
 
       middleware(req, res, next);
 

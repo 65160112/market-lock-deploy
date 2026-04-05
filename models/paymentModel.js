@@ -48,7 +48,7 @@ const Payment = {
 
   async getPendingPayments() {
     const [rows] = await db.query(`
-      SELECT p.*, u.full_name AS user_name, ml.zone, ml.lock_number
+      SELECT p.*, b.note AS booking_note, u.full_name AS user_name, ml.zone, ml.lock_number
       FROM payments p
       JOIN bookings b ON p.booking_id = b.id
       JOIN app_users u ON b.user_id = u.id

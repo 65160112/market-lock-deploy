@@ -11,7 +11,7 @@ describe('paymentController', () => {
   let req, res;
 
   beforeEach(() => {
-    req = { body: {}, params: {}, user: { id: 1, role: 'tenant' }, file: null };
+    req = { body: {}, params: {}, user: { id: 1, role: 'vendor' }, file: null };
     res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
     jest.clearAllMocks();
   });
@@ -27,7 +27,7 @@ describe('paymentController', () => {
     });
 
     test('user ดูได้เฉพาะของตัวเอง', async () => {
-      req.user = { id: 3, role: 'tenant' };
+      req.user = { id: 3, role: 'vendor' };
       Booking.findByUser.mockResolvedValue([{ id: 10 }, { id: 11 }]);
       Payment.findAll.mockResolvedValue([
         { id: 1, booking_id: 10 },
@@ -105,7 +105,7 @@ describe('paymentController', () => {
     });
 
     test('ไม่ใช่เจ้าของ booking ได้ 403', async () => {
-      req.user = { id: 2, role: 'tenant' };
+      req.user = { id: 2, role: 'vendor' };
       req.body = { booking_id: 1, bank_name: 'กสิกร', transferred_at: '2025-01-01 10:00:00' };
       Booking.findById.mockResolvedValue({ id: 1, user_id: 5, total_price: 1500 });
       await paymentController.submitPayment(req, res);
@@ -113,7 +113,7 @@ describe('paymentController', () => {
     });
 
     test('มีการแนบสลิปแล้ว ได้ 409', async () => {
-      req.user = { id: 5, role: 'tenant' };
+      req.user = { id: 5, role: 'vendor' };
       req.body = { booking_id: 1, bank_name: 'กสิกร', transferred_at: '2025-01-01 10:00:00' };
       Booking.findById.mockResolvedValue({ id: 1, user_id: 5, total_price: 1500 });
       Payment.findByBooking.mockResolvedValue({ id: 1 });
@@ -122,7 +122,7 @@ describe('paymentController', () => {
     });
 
     test('ไม่แนบสลิป ได้ 400', async () => {
-      req.user = { id: 5, role: 'tenant' };
+      req.user = { id: 5, role: 'vendor' };
       req.body = { booking_id: 1, bank_name: 'กสิกร', transferred_at: '2025-01-01 10:00:00' };
       req.file = null;
       Booking.findById.mockResolvedValue({ id: 1, user_id: 5, total_price: 1500 });
@@ -133,7 +133,7 @@ describe('paymentController', () => {
     });
 
     test('ส่งสลิปสำเร็จ ได้ 201', async () => {
-      req.user = { id: 5, role: 'tenant' };
+      req.user = { id: 5, role: 'vendor' };
       req.body = { booking_id: 1, bank_name: 'กสิกร', transferred_at: '2025-01-01 10:00:00' };
       req.file = { filename: 'slip_123.jpg' };
       Booking.findById.mockResolvedValue({ id: 1, user_id: 5, total_price: 1500 });
