@@ -4,8 +4,8 @@ const marketLockController = require("../controllers/marketLockController");
 const authMiddleware = require("../middlewares/authMiddleware");
 const roleMiddleware = require("../middlewares/roleMiddleware");
 
-// ทุกคนที่ login แล้วดูได้
-router.get("/", authMiddleware, marketLockController.getAllLocks);
+// Public — ใช้สำหรับ Landing Page และผู้ใช้ที่ login แล้ว
+router.get("/", marketLockController.getAllLocks);
 router.get("/map", authMiddleware, marketLockController.getMapLayout);
 router.get("/:id", authMiddleware, marketLockController.getLockById);
 

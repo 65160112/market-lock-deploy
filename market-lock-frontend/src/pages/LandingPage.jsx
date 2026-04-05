@@ -11,7 +11,8 @@ export default function LandingPage() {
   useEffect(() => {
     api.get('/locks')
       .then(res => {
-        const availableLocks = res.data
+        const data = Array.isArray(res.data) ? res.data : [];
+        const availableLocks = data
           .filter(l => l.status === 'available')
           .sort(() => Math.random() - 0.5)
           .slice(0, 3);
