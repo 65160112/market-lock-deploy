@@ -81,7 +81,7 @@ const authController = {
       if (err) {
         return res.status(500).json({ message: "ออกจากระบบไม่สำเร็จ" });
       }
-      res.clearCookie("connect.sid");
+      res.clearCookie("market_session");
       res.json({ message: "ออกจากระบบสำเร็จ" });
     });
   },
