@@ -16,8 +16,9 @@ const errorMiddleware = require("./middlewares/errorMiddleware");
 const app = express();
 
 // CORS
+const corsOrigin = process.env.CORS_ORIGIN || 'http://localhost:3001';
 app.use(cors({
-  origin: "http://localhost:3001",
+  origin: corsOrigin,
   credentials: true,
 }));
 
