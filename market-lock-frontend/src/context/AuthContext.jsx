@@ -21,8 +21,13 @@ export function AuthProvider({ children }) {
   };
 
   const logout = async () => {
-    await api.post('/auth/logout');
-    setUser(null);
+    try {
+      await api.post('/auth/logout');
+    } catch (_) {
+      // logout ฝั่ง server ล้มเหลวก็ไม่เป็นไร — clear user state เสมอ
+    } finally {
+      setUser(null);
+    }
   };
 
   return (
