@@ -31,16 +31,9 @@ app.use(cors({
   credentials: true,
 }));
 
-// Session store (MySQL)
-const sessionStore = new MySQLStore({
-  host: process.env.DB_HOST || "localhost",
-  port: parseInt(process.env.DB_PORT) || 3306,
-  user: process.env.DB_USER || "root",
-  password: process.env.DB_PASSWORD || "",
-  database: process.env.DB_NAME || "market_lock_db",
-  ssl: process.env.DB_SSL === "true" ? { rejectUnauthorized: false } : false,
-  createDatabaseTable: true,
-});
+// Session store — ใช้ pool เดิมจาก database.js
+const pool = require("./config/database");
+const sessionStore = new MySQLStore({ createDatabaseTable: true }, pool);
 
 sessionStore.on("error", (err) => {
   console.error("Session store error:", err.message);
