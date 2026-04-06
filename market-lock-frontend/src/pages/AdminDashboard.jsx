@@ -16,6 +16,12 @@ export default function AdminDashboard() {
     zone: '', lock_number: '', size: '', price_per_month: '', description: ''
   });
 
+  const [showUserModal, setShowUserModal] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  const [userForm, setUserForm] = useState({
+    full_name: '', phone: '', role: '', password: ''
+  });
+
   useEffect(() => {
     api.get('/locks').then(r => setLocks(r.data));
     loadUsers();
@@ -81,6 +87,32 @@ export default function AdminDashboard() {
       // Refresh locks
       const res = await api.get('/locks');
       setLocks(res.data);
+    } catch (err) {
+      alert('❌ เกิดข้อผิดพลาด: ' + (err.response?.data?.message || err.message));
+    }
+  };
+
+  const openUserModal = (user) => {
+    setEditingUser(user);
+    setUserForm({ full_name: user.full_name, phone: user.phone || '', role: user.role, password: '' });
+    setShowUserModal(true);
+  };
+
+  const closeUserModal = () => {
+    setShowUserModal(false);
+    setEditingUser(null);
+    setUserForm({ full_name: '', phone: '', role: '', password: '' });
+  };
+
+  const handleUserSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const payload = { full_name: userForm.full_name, phone: userForm.phone, role: userForm.role };
+      if (userForm.password) payload.password = userForm.password;
+      await api.put(`/users/${editingUser.id}`, payload);
+      alert('✅ แก้ไขข้อมูลผู้ใช้สำเร็จ');
+      loadUsers();
+      closeUserModal();
     } catch (err) {
       alert('❌ เกิดข้อผิดพลาด: ' + (err.response?.data?.message || err.message));
     }
@@ -186,9 +218,10 @@ export default function AdminDashboard() {
                   <td>{u.phone || '-'}</td>
                   <td>{new Date(u.created_at).toLocaleDateString('th-TH')}</td>
                   <td>
-                    <button className="btn-sm btn-danger" onClick={() => handleUserDelete(u.id)}>
-                      ลบ
-                    </button>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button className="btn-sm btn-edit" onClick={() => openUserModal(u)}>แก้ไข</button>
+                      <button className="btn-sm btn-danger" onClick={() => handleUserDelete(u.id)}>ลบ</button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -259,6 +292,59 @@ export default function AdminDashboard() {
                 <button type="submit" className="btn-primary">
                   {editingLock ? 'แก้ไข' : 'เพิ่ม'}
                 </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* User Edit Modal */}
+      {showUserModal && (
+        <div className="modal-overlay" onClick={closeUserModal}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h3 className="modal-title">แก้ไขข้อมูลผู้ใช้</h3>
+            <form onSubmit={handleUserSubmit}>
+              <div className="form-group">
+                <label>ชื่อ-นามสกุล</label>
+                <input
+                  type="text"
+                  value={userForm.full_name}
+                  onChange={(e) => setUserForm({ ...userForm, full_name: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>เบอร์โทร</label>
+                <input
+                  type="text"
+                  value={userForm.phone}
+                  onChange={(e) => setUserForm({ ...userForm, phone: e.target.value })}
+                  placeholder="08xxxxxxxx"
+                />
+              </div>
+              <div className="form-group">
+                <label>บทบาท</label>
+                <select
+                  value={userForm.role}
+                  onChange={(e) => setUserForm({ ...userForm, role: e.target.value })}
+                >
+                  <option value="vendor">พ่อค้า (vendor)</option>
+                  <option value="manager">ผู้จัดการ (manager)</option>
+                  <option value="admin">ผู้ดูแลระบบ (admin)</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label>รหัสผ่านใหม่ (ถ้าต้องการเปลี่ยน)</label>
+                <input
+                  type="password"
+                  value={userForm.password}
+                  onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
+                  placeholder="ปล่อยว่างถ้าไม่ต้องการเปลี่ยน"
+                />
+              </div>
+              <div className="modal-actions">
+                <button type="button" className="btn-secondary" onClick={closeUserModal}>ยกเลิก</button>
+                <button type="submit" className="btn-primary">บันทึก</button>
               </div>
             </form>
           </div>

@@ -75,11 +75,17 @@ const appUserController = {
         return res.status(403).json({ message: "ไม่มีสิทธิ์แก้ไขข้อมูลนี้" });
       }
 
+      const { full_name, phone, password, role } = req.body;
+
       const updateFields = {};
       if (full_name) updateFields.full_name = full_name;
-      if (phone) updateFields.phone = phone;
-      if (password) {
-        updateFields.password = await bcrypt.hash(password, 10);
+      if (phone !== undefined) updateFields.phone = phone;
+      if (password) updateFields.password = await bcrypt.hash(password, 10);
+      if (role && req.user.role === "admin") {
+        if (!["admin", "manager", "vendor"].includes(role)) {
+          return res.status(400).json({ message: "บทบาทไม่ถูกต้อง" });
+        }
+        updateFields.role = role;
       }
 
       await AppUser.update(id, updateFields);
