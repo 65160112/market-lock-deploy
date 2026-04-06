@@ -31,9 +31,16 @@ app.use(cors({
   credentials: true,
 }));
 
-// Session store — ใช้ pool เดิมจาก database.js
-const pool = require("./config/database");
-const sessionStore = new MySQLStore({ createDatabaseTable: true }, pool);
+// Session store — ใช้ callback pool (express-mysql-session ไม่รองรับ promise pool)
+const mysql2 = require("mysql2");
+const sessionPool = mysql2.createPool({
+  host: process.env.DB_HOST || "localhost",
+  port: parseInt(process.env.DB_PORT) || 3306,
+  user: process.env.DB_USER || "root",
+  password: process.env.DB_PASSWORD || "",
+  database: process.env.DB_NAME || "market_lock_db",
+});
+const sessionStore = new MySQLStore({ createDatabaseTable: true }, sessionPool);
 
 sessionStore.on("error", (err) => {
   console.error("Session store error:", err.message);
