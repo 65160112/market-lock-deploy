@@ -39,6 +39,9 @@ sessionStore.on("error", (err) => {
   console.error("Session store error:", err.message);
 });
 
+// Health check — ต้องอยู่ก่อน session middleware เพื่อไม่ให้ติด MySQL
+app.get("/health", (req, res) => res.json({ status: "ok" }));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -66,9 +69,6 @@ app.use(
     },
   })
 );
-
-// Health check for Railway
-app.get("/health", (req, res) => res.json({ status: "ok" }));
 
 // Routes
 app.use("/api/auth", authRoutes);
