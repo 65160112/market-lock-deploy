@@ -1,5 +1,9 @@
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 const AppUser = require("../models/appUserModel");
+
+const JWT_SECRET = process.env.JWT_SECRET || process.env.SESSION_SECRET || "secret_key";
+const JWT_EXPIRES = "7d";
 
 const authController = {
   // POST /auth/register
@@ -58,7 +62,7 @@ const authController = {
         return res.status(401).json({ message: "อีเมลหรือรหัสผ่านไม่ถูกต้อง" });
       }
 
-      req.session.user = {
+      const payload = {
         id: user.id,
         username: user.username,
         email: user.email,
@@ -66,9 +70,12 @@ const authController = {
         full_name: user.full_name,
       };
 
+      const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES });
+
       res.json({
         message: "เข้าสู่ระบบสำเร็จ",
-        user: req.session.user,
+        token,
+        user: payload,
       });
     } catch (err) {
       res.status(500).json({ message: "เกิดข้อผิดพลาด", error: err.message });
@@ -77,18 +84,12 @@ const authController = {
 
   // POST /auth/logout
   async logout(req, res) {
-    req.session.destroy((err) => {
-      if (err) {
-        return res.status(500).json({ message: "ออกจากระบบไม่สำเร็จ" });
-      }
-      res.clearCookie("market_session");
-      res.json({ message: "ออกจากระบบสำเร็จ" });
-    });
+    res.json({ message: "ออกจากระบบสำเร็จ" });
   },
 
   // GET /auth/me
   async me(req, res) {
-    res.json({ user: req.session.user });
+    res.json({ user: req.user });
   },
 };
 

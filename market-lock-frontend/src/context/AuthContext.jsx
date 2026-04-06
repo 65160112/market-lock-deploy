@@ -8,14 +8,23 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-  api.get('/auth/me')
-    .then(res => setUser(res.data.user))
-    .catch(() => setUser(null))
-    .finally(() => setLoading(false));
-}, []); // ← ต้องมี [] ตรงนี้
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+    api.get('/auth/me')
+      .then(res => setUser(res.data.user))
+      .catch(() => {
+        localStorage.removeItem('token');
+        setUser(null);
+      })
+      .finally(() => setLoading(false));
+  }, []);
 
   const login = async (email, password) => {
     const res = await api.post('/auth/login', { email, password });
+    localStorage.setItem('token', res.data.token);
     setUser(res.data.user);
     return res.data.user;
   };
@@ -23,11 +32,9 @@ export function AuthProvider({ children }) {
   const logout = async () => {
     try {
       await api.post('/auth/logout');
-    } catch (_) {
-      // logout ฝั่ง server ล้มเหลวก็ไม่เป็นไร — clear user state เสมอ
-    } finally {
-      setUser(null);
-    }
+    } catch (_) {}
+    localStorage.removeItem('token');
+    setUser(null);
   };
 
   return (
