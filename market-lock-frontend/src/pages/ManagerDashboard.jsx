@@ -150,7 +150,7 @@ export default function ManagerDashboard() {
                     <td>{new Date(p.uploaded_at).toLocaleDateString('th-TH')}</td>
                     <td>{p.booking_note || '-'}</td>
                     <td>
-                      <a href={`http://localhost:3000/uploads/slips/${p.slip_image}`} target="_blank" rel="noopener noreferrer">
+                      <a href={`${(process.env.REACT_APP_API_URL || 'http://localhost:3000/api').replace('/api', '')}/uploads/slips/${p.slip_image}`} target="_blank" rel="noopener noreferrer">
                         ดูสลิป
                       </a>
                     </td>
