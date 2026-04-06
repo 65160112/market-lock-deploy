@@ -68,8 +68,6 @@ const appUserController = {
   async updateUser(req, res) {
     try {
       const { id } = req.params;
-      const { full_name, phone, password } = req.body;
-
       // ตรวจสิทธิ์: แก้ได้เฉพาะตัวเองหรือ admin
       if (req.user.role !== "admin" && req.user.id !== parseInt(id)) {
         return res.status(403).json({ message: "ไม่มีสิทธิ์แก้ไขข้อมูลนี้" });
